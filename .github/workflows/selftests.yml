@@ -1,0 +1,19 @@
+name: Test the github action
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Test the action by building our own documentation.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 5.0.x
+
+      - uses: ./
+        with:
+          project-name: "Retype documentation build GitHub Action"
+          no-push-back: true

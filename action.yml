@@ -1,0 +1,22 @@
+name: 'Retype documentation builder'
+description: 'Use this action to build documentation from your repository and push it to your gh-pages branch.'
+inputs:
+  project-name:
+    description: 'The name of the project being documented'
+    required: true
+  branch:
+    description: 'Branch to push the documentation to'
+    required: false
+    default: 'gh-pages'
+  input-root:
+    description: 'Root directory where to process documentation from'
+    required: false
+  no-push-back:
+    description: 'Pass "true" to completely disable pushing back documentation.'
+    required: false
+    default: false
+runs:
+  using: "composite"
+  steps:
+    - run: ${{ github.action_path }}/build_docs.sh ${{ inputs.docs-root }}
+      shell: bash
