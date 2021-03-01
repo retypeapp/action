@@ -212,10 +212,27 @@ Branching off it: "
   echo "done."
 
   echo -n "Cleaning up branch: "
-  fail_nl "Branch cleanup not implemented (yet). Should erase potential website (or
-previous built) yet keep control files like the CNAME or .github ones."
-  # TODO: remove any files (git rm -r .) then reset gh-pages control files (if exists)
-  #       like the CNAME one.
+
+  keepcname=false
+  if [ -e CNAME ]; then
+    keepcname=true
+  fi
+
+  git rm -r --quiet . || fail_nl "unable to git-rm checked out repository."
+
+  if ${keepcname}; then
+    git checkout -- CNAME || fail_nl "unable to check out CNAME file after git-rm."
+    git reset HEAD -- CNAME || fail_nl "unable to reset CNAME file to previous branch HEAD."
+  fi
+
+  IFS=$'\n'
+  rootdirs=($(git ls-files --other | cut -f1 -d/ | sort -u))
+  IFS="${_ifs}"
+
+  for rootdir in "${rootdirs[@]}"; do
+    git rm -r --quiet "${rootdir}" || fail_nl "unable to remove directory at root: ${rootdir}"
+  done
+
   echo "done."
 else
   echo -n "Creating new, orphan, gh-pages branch: "
