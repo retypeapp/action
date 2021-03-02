@@ -1,4 +1,4 @@
-name: Test the github action
+name: GitHub Action self tests
 on:
   workflow_dispatch:
 
@@ -22,7 +22,7 @@ jobs:
           git clone . "../this-very-action"
 
       - uses: ./../this-very-action/
-        name: Run this action without pushing data back.
+        name: Run this action on ${{ matrix.os }} without pushing data back.
         with:
-          project-name: "Self-tests project"
+          project-name: "Self-tests project for ${{ matrix.os }} environment"
           no-push-back: true
