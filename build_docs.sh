@@ -4,6 +4,7 @@ retype_version="1.0.0"
 
 use_dotnet=false
 _ifs="${IFS}"
+abortbuildmsg="Aborting documentation build process."
 
 function fail() {
   local msg="${@}"
@@ -17,6 +18,28 @@ function fail_nl() {
 
   echo "error."
   fail "${msg}"
+}
+
+
+function fail_cmd() {
+  local nl="${1}" msg="${2}" cmd="${3}" output="${4}"
+  local multiline_msg
+
+  multiline_msg="${msg}.
+Failed command and output:
+
+\$ ${cmd}
+
+${output}
+----
+
+${abortbuildmsg}"
+
+  if [ "${nl}" == true ]; then
+    fail_nl "${multiline_msg}"
+  else
+    fail "${multiline_msg}"
+  fi
 }
 
 # We prefer dotnet if available as the package size is (much) smaller.
@@ -83,41 +106,22 @@ if [ ${retstat} -eq 0 ]; then
 Expected version: ${retype_version}
 Available version: $(retype --version | strings)
 
-Aborting documentation build process."
+${abortbuildmsg}"
   fi
 else
   echo -n "Installing retype v${retype_version} using "
   if ${use_dotnet}; then
     echo -n "dotnet tool: "
 
-    result="$(dotnet tool install --global --version ${retype_version} retypeapp 2>&1)"
-    retstat="${?}"
-
-    if [ ${retstat} -ne 0 ]; then
-      echo "failed."
-      fail "unable to install retype using the dotnet tool.
-Output for the 'dotnet tool' command:
-----
-${result}
-----
-
-Aborting documentation build process."
-    fi
+    cmdln=(dotnet tool install --global --version ${retype_version} retypeapp)
+    result="$("${cmdln[@]}" 2>&1)" || \
+      fail_cmd true "unable to install retype using the dotnet tool" "${cmdln[@]}" "${result}"
 else
     echo -n "NPM package manager: "
 
-    result="$(npm install --global retypeapp@${retype_version} 2>&1)"
-    retstat="${?}"
-
-    if [ ${retstat} -ne 0 ]; then
-      fail_nl "unable to install retype using the NPM package manager.
-Output for the NPM install command:
-----
-${result}
-----
-
-Aborting documentation build process."
-    fi
+    cmdln=(npm install --global "retypeapp@${retype_version}")
+    result="$("${cmdln[@]}" 2>&1)" || \
+      fail_cmd true "unable to install retype using the NPM package manager" "${cmdln[@]}" "${result}"
   fi
   echo "done."
 fi
@@ -158,37 +162,17 @@ echo "done."
 
 echo -n "Building documentation: "
 cd "${destdir}"
-result="$(time retype build --verbose 2>&1)"
-retstat="${?}"
+result="$(time retype build --verbose 2>&1)" || \
+  fail_cmd true "retype build command failed with exit code ${retstat}" "retype build --verbose" "${result}"
+
 cd - > /dev/null 2>&1
 
-if [ ${retstat} -ne 0 ]; then
-  echo "error."
-  fail "retype build command failed with exit code ${retstat}. Command output:
---------
-${result}
---------
-
-Aborting documentation build process."
-else
-  echo "done.
+echo "done.
 Documentation static website built at: ${destdir}/output:"
-fi
 
 echo -n "Fetching remote to check whether gh-pages exists: "
-result="$(git fetch 2>&1)"
-retstat="${?}"
-
-if [ ${retstat} -ne 0 ]; then
-  fail_nl "unable to fetch remote repository for existing branchs.
-Failing command output:
-
-\$ git fetch
-${result}
-------------
-
-Aborting documentation build process."
-fi
+result="$(git fetch 2>&1)" || \
+  fail_cmd true "unable to fetch remote repository for existing branchs" "git fetch" "${result}"
 
 needpr=false
 if git branch --list --remotes --format="%(refname)" | egrep -q "^refs/remotes/origin/gh-pages\$"; then
@@ -263,24 +247,19 @@ git add . > /dev/null || fail_nl "unable to stage website files."
 
 git config user.email hello@object.net
 git config user.name "Retype documentation builder v$(retype --version | strings)"
-result="$(git commit -m "Adds documentation files to the repository.
 
-Process triggered by ${GITHUB_ACTOR}.")" || {
-  fail_nl "unable to commit files. Command output:
-git commit...
------
-${result}
------
+cmdln=(git commit -m "Adds documentation files to the repository.
 
-Aborting documentation build process."
-}
+Process triggered by ${GITHUB_ACTOR}.")
+
+result="$("${cmdln[@]}" 2>&1)" || \
+  fail_cmd true "unable to commit website files" "${cmdln[@]}" "${result}"
 
 # TODO: honor input no-push-back
-result="$(git push origin HEAD)"
-retstat="${?}"
-if [ ${retstat} -ne 0 ]; then
-  fail_nl "unable to push changes back"
-fi
+echo -n "Pushing website to GitHub: "
+result="$(git push origin HEAD 2>&1)" || \
+  fail_cmd true "unable to push branch to GitHub" "git push origin HEAD" "${result}"
+echo "done."
 
 if ${needpr}; then
   # TODO: https://docs.github.com/en/rest/reference/pulls#create-a-pull-request
