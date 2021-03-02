@@ -227,7 +227,7 @@ if git branch --list --remotes --format="%(refname)" | egrep -q "^refs/remotes/o
   echo -n "Branch 'gh-pages' already exists.
 Creating branch off existing 'gh-pages': "
   needpr=true
-  git checkout gh-pages > /dev/null || fail_nl "unable to checkout the gh-pages branch."
+  git checkout --quiet gh-pages || fail_nl "unable to checkout the gh-pages branch."
   branchname="gh-pages-${GITHUB_RUN_ID}_${GITHUB_RUN_NUMBER}"
 
   uniquer=0
@@ -240,7 +240,7 @@ Creating branch off existing 'gh-pages': "
   done
 
   echo -n "${branchname}, "
-  git checkout -b "${branchname}" > /dev/null || fail_nl "unable to switch to new branch '${branchname}'."
+  git checkout --quiet -b "${branchname}" || fail_nl "unable to switch to new branch '${branchname}'."
   echo "done."
 
   echo -n "Cleaning up branch: "
@@ -268,10 +268,10 @@ Creating branch off existing 'gh-pages': "
   echo "done."
 else
   echo -n "Creating new, orphan, 'gh-pages' branch: "
-  git checkout --orphan gh-pages || fail_nl "unable to checkout to a new, orphan branch called 'gh-pages'."
+  git checkout --quiet --orphan gh-pages || fail_nl "unable to checkout to a new, orphan branch called 'gh-pages'."
 
   echo -n "cleanup"
-  git reset HEAD -- . || fail_nl "unable to remove original files from staging."
+  git reset --quiet HEAD -- . || fail_nl "unable to remove original files from staging."
 
   git clean -x -q -f || fail_nl "unable to clean-up repository from non-website-related files."
 
@@ -296,7 +296,7 @@ git add . > /dev/null || fail_nl "unable to stage website files."
 git config user.email hello@object.net
 git config user.name "Retype documentation builder v$(retype --version | strings)"
 
-cmdln=(git commit -m "Adds documentation files to the repository.
+cmdln=(git commit --quiet -m "Adds documentation files to the repository.
 
 Process triggered by ${GITHUB_ACTOR}.")
 
@@ -306,7 +306,7 @@ echo "done."
 
 if [ "${INPUT_NO_PUSH_BACK}" != "true" ]; then
   echo -n "Pushing website to GitHub: "
-  result="$(git push origin HEAD 2>&1)" || \
+  result="$(git push --quiet origin HEAD 2>&1)" || \
     fail_cmd true "unable to push branch to GitHub" "git push origin HEAD" "${result}"
   echo "done."
 
