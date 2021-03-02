@@ -6,6 +6,46 @@ use_dotnet=false
 _ifs="${IFS}"
 abortbuildmsg="Aborting documentation build process."
 
+if [ "${OSTYPE}" == "msys" ]; then
+  MSYS_TMPDIR="$(mount | egrep "^[^ ]+ on /tmp type" | cut -f1 -d" ")"
+
+  if [ -z "${MSYS_TMPDIR}" ]; then
+    fail "unable to query MSYS mounted /tmp/ directory. Current mtab:
+$(mount)
+----
+
+${abortbuildmsg}"
+  fi
+
+  function cf_path() {
+    local linuxpath="${@}"
+    local drivepath
+
+    if [ "${linuxpath::1}" != "/" ]; then
+      #relative path
+      echo "${linuxpath}"
+      return 0
+    else
+      drivepath="${linuxpath::3}"
+      if [ -z "${drivepath/\/[a-zA-Z]\/}" ]; then
+        echo "${drivepath:1:1}:${linuxpath#/?}"
+        return 0
+      elif [ "${linuxpath::5}" == "/tmp/" ]; then
+        echo "${MSYS_TMPDIR}/${linuxpath#/*/}"
+      else
+        # could be a network drive, something we don't support or suppose will ever
+        # be used as absolute path under windows.
+        return 1
+      fi
+    fi
+  }
+else
+  function cf_path() {
+    echo "${@}"
+    return 0
+  }
+fi
+
 function fail() {
   local msg="${@}"
 
@@ -19,7 +59,6 @@ function fail_nl() {
   echo "error."
   fail "${msg}"
 }
-
 
 function fail_cmd() {
   local nl="${1}" msg="${2}" cmd="${3}" output="${4}"
@@ -134,12 +173,16 @@ echo "${destdir}"
 
 echo -n "Creating configuration file: "
 
+# cf_path ensures path is converted in case we are running from windows
+config_input="$(cf_path "$(pwd)/${docsroot#./}")" || fail_nl "unable to parse input path: $(pwd)/${docsroot#./}"
+config_output="$(cf_path "${destdir}/output")" || fail_nl "unable to parse output path: ${destdir}/output"
+
 # FIXME: 'base' below will make it work in generic github.io hosting but would break for
 # FIXME: INPUT_PROJECT_NAME is empty albeit being provided.
 cat << EOF > "${destdir}/retype.json"
 {
-  "input": "$(pwd)/${docsroot#./}",
-  "output": "${destdir}/output",
+  "input": "${config_input}",
+  "output": "${config_output}",
   "base": "${GITHUB_REPOSITORY##*/}",
   "identity": {
     "title": "${INPUT_PROJECT_NAME}",
@@ -167,8 +210,12 @@ result="$(retype build --verbose 2>&1)" || \
 
 cd - > /dev/null 2>&1
 
-echo "done.
+echo -n "done.
 Documentation static website built at: ${destdir}/output"
+if [ "${config_output}" != "${destdir}/output" ]; then
+  echo -n " (${config_output})"
+fi
+echo ""
 
 echo -n "Fetching remote for existing branches: "
 result="$(git fetch 2>&1)" || \
