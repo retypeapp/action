@@ -109,7 +109,7 @@ Available version: $(retype --version | strings)
 ${abortbuildmsg}"
   fi
 else
-  echo -n "Installing retype v${retype_version} using "
+  echo -n "Installing Retype v${retype_version} using "
   if ${use_dotnet}; then
     echo -n "dotnet tool: "
 
@@ -162,22 +162,23 @@ echo "done."
 
 echo -n "Building documentation: "
 cd "${destdir}"
-result="$(time retype build --verbose 2>&1)" || \
+result="$(retype build --verbose 2>&1)" || \
   fail_cmd true "retype build command failed with exit code ${retstat}" "retype build --verbose" "${result}"
 
 cd - > /dev/null 2>&1
 
 echo "done.
-Documentation static website built at: ${destdir}/output:"
+Documentation static website built at: ${destdir}/output"
 
-echo -n "Fetching remote to check whether gh-pages exists: "
+echo -n "Fetching remote for existing branches: "
 result="$(git fetch 2>&1)" || \
-  fail_cmd true "unable to fetch remote repository for existing branchs" "git fetch" "${result}"
+  fail_cmd true "unable to fetch remote repository for existing branches" "git fetch" "${result}"
+echo "done."
 
 needpr=false
 if git branch --list --remotes --format="%(refname)" | egrep -q "^refs/remotes/origin/gh-pages\$"; then
-  echo "Branch gh-pages already exists.
-Branching off it: "
+  echo -n "Branch 'gh-pages' already exists.
+Creating branch off existing 'gh-pages': "
   needpr=true
   git checkout gh-pages > /dev/null || fail_nl "unable to checkout the gh-pages branch."
   branchname="gh-pages-${GITHUB_RUN_ID}_${GITHUB_RUN_NUMBER}"
@@ -219,7 +220,7 @@ Branching off it: "
 
   echo "done."
 else
-  echo -n "Creating new, orphan, gh-pages branch: "
+  echo -n "Creating new, orphan, 'gh-pages' branch: "
   git checkout --orphan gh-pages || fail_nl "unable to checkout to a new, orphan branch called 'gh-pages'."
 
   echo -n "cleanup"
@@ -254,6 +255,7 @@ Process triggered by ${GITHUB_ACTOR}.")
 
 result="$("${cmdln[@]}" 2>&1)" || \
   fail_cmd true "unable to commit website files" "${cmdln[@]}" "${result}"
+echo "done."
 
 # TODO: honor input no-push-back
 echo -n "Pushing website to GitHub: "
@@ -267,4 +269,4 @@ if ${needpr}; then
   echo "Pull request creation not supported at this time. The branch is pushed but merging should be done by the user."
 fi
 
-echo "Process completed successfully."
+echo "Retype documentation build completed successfully."
