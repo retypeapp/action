@@ -16,7 +16,12 @@ jobs:
         with:
           dotnet-version: 5.0.x
 
-      - uses: ./
+      - name: Make a static copy of the repository to reference the action from
+        shell: bash
+        run: |
+          git clone . "../this-very-action"
+
+      - uses: ./../this-very-action/
         name: Run this action without pushing data back.
         with:
           project-name: "Self-tests project"
