@@ -18,7 +18,7 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - run: ${{ github.action_path }}/build_docs.sh ${{ inputs.docs-root }}
+    - run: "${GITHUB_ACTION_PATH}/build_docs.sh"
       shell: bash
       env:
         INPUT_PROJECT_NAME: ${{ inputs.project-name }}
