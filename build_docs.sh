@@ -257,16 +257,19 @@ result="$("${cmdln[@]}" 2>&1)" || \
   fail_cmd true "unable to commit website files" "${cmdln[@]}" "${result}"
 echo "done."
 
-# TODO: honor input no-push-back
-echo -n "Pushing website to GitHub: "
-result="$(git push origin HEAD 2>&1)" || \
-  fail_cmd true "unable to push branch to GitHub" "git push origin HEAD" "${result}"
-echo "done."
+if [ "${INPUT_NO_PUSH_BACK}" != "true" ]; then
+  echo -n "Pushing website to GitHub: "
+  result="$(git push origin HEAD 2>&1)" || \
+    fail_cmd true "unable to push branch to GitHub" "git push origin HEAD" "${result}"
+  echo "done."
 
-if ${needpr}; then
-  # TODO: https://docs.github.com/en/rest/reference/pulls#create-a-pull-request
-  # Auth with: https://docs.github.com/en/actions/reference/authentication-in-a-workflow#about-the-github_token-secret
-  echo "Pull request creation not supported at this time. The branch is pushed but merging should be done by the user."
+  if ${needpr}; then
+    # TODO: https://docs.github.com/en/rest/reference/pulls#create-a-pull-request
+    # Auth with: https://docs.github.com/en/actions/reference/authentication-in-a-workflow#about-the-github_token-secret
+    echo "Pull request creation not supported at this time. The branch is pushed but merging should be done by the user."
+  fi
+else
+  echo "no-push-back: skipping GitHub interactions (push, pull request)."
 fi
 
 echo "Retype documentation build completed successfully."

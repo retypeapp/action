@@ -20,3 +20,8 @@ runs:
   steps:
     - run: ${{ github.action_path }}/build_docs.sh ${{ inputs.docs-root }}
       shell: bash
+      env:
+        INPUT_PROJECT_NAME: ${{ inputs.project-name }}
+        INPUT_BRANCH: ${{ inputs.branch }}
+        INPUT_INPUT_ROOT: ${{ inputs.input-root }}
+        INPUT_NO_PUSH_BACK: ${{ inputs.no-push-back }}
