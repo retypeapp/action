@@ -240,7 +240,7 @@ else
 fi
 
 echo -n "Copying over built website files: "
-cp -dpR "${destdir}/output/." . || fail_nl "unable to copy built website files."
+cp -pPR "${destdir}/output/." . || fail_nl "unable to copy built website files."
 echo "done."
 
 echo -n "Committing files: "
