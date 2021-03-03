@@ -1,6 +1,8 @@
 name: GitHub Action self tests
 on:
   workflow_dispatch:
+  pull_request:
+    types: [synchronize, opened, reopened, ready_for_review]
 
 jobs:
   test:
@@ -8,7 +10,9 @@ jobs:
     strategy:
       matrix:
         os: [ ubuntu-latest, windows-latest, macos-latest ]
+
     runs-on: ${{ matrix.os }}
+
     steps:
       - uses: actions/checkout@v2
 
