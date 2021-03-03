@@ -1,0 +1,33 @@
+name: Publish documentation to GitHub Pages
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  publish:
+    name: Publish to GitHub Pages
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 5.0.x
+
+      - name: Make a static copy of the repository to reference the action
+        shell: bash
+        run: |
+          git clone . "../this-very-action"
+
+      - name: Build documentation and push back to Git
+        uses: ./../this-very-action/
+        with:
+          project-name: "Build repository documentation using Retype"
+          overwrite-branch: true
+
+      - name: Documentation publish report
+        shell: bash
+        run: |
+          echo "Published website available at: https://${GITHUB_REPOSITORY_OWNER}.github.io/${GITHUB_REPOSITORY##*/}/"
