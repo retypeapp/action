@@ -224,36 +224,39 @@ if [ "${config_output}" != "${destdir}/output" ]; then
 fi
 echo ""
 
+basebranch="${INPUT_BRANCH-gh-pages}"
+branchname="${basebranch}"
+echo -n "Target branch to publish to: ${branchname}"
+
 echo -n "Fetching remote for existing branches: "
 result="$(git fetch 2>&1)" || \
   fail_cmd true "unable to fetch remote repository for existing branches" "git fetch" "${result}"
 echo "done."
 
 needpr=false
-if git branch --list --remotes --format="%(refname)" | egrep -q "^refs/remotes/origin/gh-pages\$"; then
-  echo "Branch 'gh-pages' already exists."
+if git branch --list --remotes --format="%(refname)" | egrep -q "^refs/remotes/origin/${branchname}\$"; then
+  echo "Branch '${branchname}' already exists."
 
   if [ "${INPUT_OVERWRITE_BRANCH}" == "true" ]; then
-    echo -n "Switching to the 'gh-pages' branch: "
+    echo -n "Switching to the '${branchname}' branch: "
     overwrite_branch=true
   else
-    echo -n "Creating a new branch off 'gh-pages': "
+    echo -n "Creating a new branch off '${branchname}': "
     needpr=true
     overwrite_branch=false
   fi
 
-  branchname="gh-pages"
-  git checkout --quiet "${branchname}" || fail_nl "unable to checkout the gh-pages branch."
+  git checkout --quiet "${branchname}" || fail_nl "unable to checkout the '${branchname}' branch."
 
   if ! ${overwrite_branch}; then
-    branchname="${branchname}-${GITHUB_RUN_ID}_${GITHUB_RUN_NUMBER}"
+    branchname="${basebranch}-${GITHUB_RUN_ID}_${GITHUB_RUN_NUMBER}"
 
     uniquer=0
     while git branch --list --remotes --format="%(refname)" | egrep -q "^refs/remotes/origin/${branchname}\$"; do
-      branchname="gh-pages-${GITHUB_RUN_ID}_${GITHUB_RUN_NUMBER}_${uniquer}"
+      branchname="${basebranch}-${GITHUB_RUN_ID}_${GITHUB_RUN_NUMBER}_${uniquer}"
       uniquer=$(( 10#${uniquer} + 1 ))
       if [ ${uniquer} -gt 100 ]; then
-        fail_nl "unable to get a non-existing branch name based on 'gh-pages-${GITHUB_RUN_ID}_${GITHUB_RUN_NUMBER}'."
+        fail_nl "unable to get a non-existing branch name based on '${basebranch}-${GITHUB_RUN_ID}_${GITHUB_RUN_NUMBER}'."
       fi
     done
 
@@ -286,8 +289,8 @@ if git branch --list --remotes --format="%(refname)" | egrep -q "^refs/remotes/o
 
   echo "done."
 else
-  echo -n "Creating new, orphan, 'gh-pages' branch: "
-  git checkout --quiet --orphan gh-pages || fail_nl "unable to checkout to a new, orphan branch called 'gh-pages'."
+  echo -n "Creating new, orphan, '${branchname}' branch: "
+  git checkout --quiet --orphan "${branchname}" || fail_nl "unable to checkout to a new, orphan branch called '${branchname}'."
 
   echo -n "cleanup"
   git reset --quiet HEAD -- . || fail_nl "unable to remove original files from staging."
