@@ -231,23 +231,35 @@ echo "done."
 
 needpr=false
 if git branch --list --remotes --format="%(refname)" | egrep -q "^refs/remotes/origin/gh-pages\$"; then
-  echo -n "Branch 'gh-pages' already exists.
-Creating branch off existing 'gh-pages': "
-  needpr=true
-  git checkout --quiet gh-pages || fail_nl "unable to checkout the gh-pages branch."
-  branchname="gh-pages-${GITHUB_RUN_ID}_${GITHUB_RUN_NUMBER}"
+  echo "Branch 'gh-pages' already exists."
 
-  uniquer=0
-  while git branch --list --remotes --format="%(refname)" | egrep -q "^refs/remotes/origin/${branchname}\$"; do
-    branchname="gh-pages-${GITHUB_RUN_ID}_${GITHUB_RUN_NUMBER}_${uniquer}"
-    uniquer=$(( 10#${uniquer} + 1 ))
-    if [ ${uniquer} -gt 100 ]; then
-      fail_nl "unable to get a non-existing branch name based on 'gh-pages-${GITHUB_RUN_ID}_${GITHUB_RUN_NUMBER}'."
-    fi
-  done
+  if [ "${INPUT_OVERWRITE_BRANCH}" == "true" ]; then
+    echo -n "Switching to the 'gh-pages' branch: "
+    overwrite_branch=true
+  else
+    echo -n "Creating a new branch off 'gh-pages': "
+    needpr=true
+    overwrite_branch=false
+  fi
 
-  echo -n "${branchname}, "
-  git checkout --quiet -b "${branchname}" || fail_nl "unable to switch to new branch '${branchname}'."
+  branchname="gh-pages"
+  git checkout --quiet "${branchname}" || fail_nl "unable to checkout the gh-pages branch."
+
+  if ! ${overwrite_branch}; then
+    branchname="${branchname}-${GITHUB_RUN_ID}_${GITHUB_RUN_NUMBER}"
+
+    uniquer=0
+    while git branch --list --remotes --format="%(refname)" | egrep -q "^refs/remotes/origin/${branchname}\$"; do
+      branchname="gh-pages-${GITHUB_RUN_ID}_${GITHUB_RUN_NUMBER}_${uniquer}"
+      uniquer=$(( 10#${uniquer} + 1 ))
+      if [ ${uniquer} -gt 100 ]; then
+        fail_nl "unable to get a non-existing branch name based on 'gh-pages-${GITHUB_RUN_ID}_${GITHUB_RUN_NUMBER}'."
+      fi
+    done
+
+    echo -n "${branchname}, "
+    git checkout --quiet -b "${branchname}" || fail_nl "unable to switch to new branch '${branchname}'."
+  fi
   echo "done."
 
   echo -n "Cleaning up branch: "
