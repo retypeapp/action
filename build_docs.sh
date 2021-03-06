@@ -192,8 +192,7 @@ cat << EOF > "${destdir}/retype.json"
   "output": "${config_output}",
   "base": "${GITHUB_REPOSITORY##*/}",
   "identity": {
-    "title": "${INPUT_PROJECT_NAME}",
-    "label": "${INPUT_PROJECT_NAME}"
+    "title": "${INPUT_PROJECT_NAME}"
   },
   "links": [{
     "text": "Project Repository",
