@@ -28,5 +28,5 @@ jobs:
       - uses: ./../this-very-action/
         name: Run this action on ${{ matrix.os }} without pushing data back.
         with:
-          project-name: "Self-tests project for ${{ matrix.os }} environment"
+          project-name: "Action Self-tests"
           no-push-back: true

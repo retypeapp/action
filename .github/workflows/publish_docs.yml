@@ -24,7 +24,7 @@ jobs:
       - name: Build documentation and push back to Git
         uses: ./../this-very-action/
         with:
-          project-name: "Build repository documentation using Retype"
+          project-name: "Retype GitHub Action"
           overwrite-branch: true
 
       - name: Documentation publish report
